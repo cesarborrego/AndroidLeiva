@@ -5,7 +5,8 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.get
 import com.example.exam.R
 import com.example.exam.data.Filter
 import com.example.exam.data.MediaItem
@@ -13,12 +14,14 @@ import com.example.exam.databinding.ActivityMainBinding
 import com.example.exam.startActivity
 import com.example.exam.ui.detail.DetailActivity
 
-class MainActivity : AppCompatActivity(), MainPresenter.View {
+class MainActivity : AppCompatActivity() {
 
-    private val mainPresenter = MainPresenter(this, lifecycleScope)
+    private lateinit var viewMainModel: MainViewModel
 
-    private val adapter = MediaAdapter {
-        mainPresenter.onMediaItemClicked(it)
+    private val adapter by lazy {
+        MediaAdapter {
+            viewMainModel.onMediaItemClicked(it)
+        }
     }
 
     lateinit var binding: ActivityMainBinding
@@ -27,9 +30,22 @@ class MainActivity : AppCompatActivity(), MainPresenter.View {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        binding.recycler.adapter = adapter
-        mainPresenter.updateItems()
 
+        binding.recycler.adapter = adapter
+        viewMainModel.updateItems()
+
+        viewMainModel = ViewModelProvider(this).get()
+        viewMainModel.progressVisible.observe(this) {
+            binding.progress.visibility = if (it) View.VISIBLE else View.GONE
+        }
+
+        viewMainModel.mediaItems.observe(this) {
+            adapter.items = it
+        }
+
+        viewMainModel.navigateToDetail.observe(this) {
+            startActivity<DetailActivity>(DetailActivity.EXTRA_ID to it)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -43,19 +59,7 @@ class MainActivity : AppCompatActivity(), MainPresenter.View {
             R.id.filter_videos -> Filter.ByType(MediaItem.MediaItemType.VIDEO)
             else -> Filter.Non
         }
-        mainPresenter.updateItems(filter)
+        viewMainModel.updateItems(filter)
         return super.onOptionsItemSelected(item)
-    }
-
-    override fun setProgressVisible(visible: Boolean) {
-        binding.progress.visibility = if (visible) View.VISIBLE else View.GONE
-    }
-
-    override fun updateItems(mediaItems: List<MediaItem>) {
-        adapter.items = mediaItems
-    }
-
-    override fun navigateToDetail(id: Int) {
-        startActivity<DetailActivity>(DetailActivity.EXTRA_ID to id)
     }
 }
