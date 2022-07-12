@@ -32,9 +32,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         binding.recycler.adapter = adapter
-        viewMainModel.updateItems()
 
         viewMainModel = ViewModelProvider(this).get()
+        viewMainModel.updateItems()
+
         viewMainModel.progressVisible.observe(this) {
             binding.progress.visibility = if (it) View.VISIBLE else View.GONE
         }

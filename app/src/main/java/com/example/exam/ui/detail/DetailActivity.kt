@@ -22,9 +22,9 @@ class DetailActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val id = intent.getIntExtra(EXTRA_ID, 0)
-        detailViewModel.onCreate(id)
 
         detailViewModel = ViewModelProvider(this).get()
+        detailViewModel.onCreate(id)
 
         detailViewModel.title.observe(this) {
             supportActionBar?.title = it
