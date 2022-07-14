@@ -7,11 +7,15 @@ import androidx.lifecycle.viewModelScope
 import com.example.exam.data.Filter
 import com.example.exam.data.MediaItem
 import com.example.exam.data.MediaItemsProvider
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class MainViewModel : ViewModel() {
+class MainViewModel(
+    private val mediaItemProvider: MediaItemsProvider,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+) : ViewModel() {
 
     private val _progressVisible = MutableLiveData<Boolean>()
     val progressVisible: LiveData<Boolean> get() = _progressVisible
@@ -25,13 +29,13 @@ class MainViewModel : ViewModel() {
     fun updateItems(filter: Filter = Filter.Non) {
         viewModelScope.launch(Dispatchers.Main) {
             _progressVisible.value = true
-            _mediaItems.value = withContext(Dispatchers.IO) { getFilteredItems(filter) }
+            _mediaItems.value = withContext(ioDispatcher) { getFilteredItems(filter) }
             _progressVisible.value = false
         }
     }
 
     private fun getFilteredItems(filter: Filter): List<MediaItem> {
-        return MediaItemsProvider.getItems().let { mediaItems ->
+        return mediaItemProvider.getItems().let { mediaItems ->
             when (filter) {
                 Filter.Non -> mediaItems
                 is Filter.ByType -> mediaItems.filter { it.mediaItemType == filter.value }

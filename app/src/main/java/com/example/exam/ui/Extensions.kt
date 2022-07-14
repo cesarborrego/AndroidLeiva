@@ -10,6 +10,9 @@ import android.widget.ImageView
 import android.widget.Toast
 import androidx.annotation.LayoutRes
 import androidx.core.os.bundleOf
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 
@@ -31,4 +34,8 @@ inline fun <reified T : Activity> Context.startActivity(vararg pairs: Pair<Strin
         .apply { putExtras(bundleOf(*pairs)) }
         .also(::startActivity)
 
+}
+
+fun <T> LifecycleOwner.observe(liveData: LiveData<T>, observer: (T) -> Unit) {
+    liveData.observe(this, Observer(observer))
 }

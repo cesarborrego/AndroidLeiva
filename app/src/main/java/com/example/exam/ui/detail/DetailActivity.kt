@@ -2,14 +2,14 @@ package com.example.exam.ui.detail
 
 import android.os.Bundle
 import android.view.View
-import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.get
 import com.example.exam.databinding.ActivityDetailBinding
 import com.example.exam.loadUrl
+import com.example.exam.observe
+import org.koin.androidx.scope.ScopeActivity
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
-class DetailActivity : AppCompatActivity() {
-    private lateinit var detailViewModel: DetailViewModel
+class DetailActivity : ScopeActivity() {
+    private val detailViewModel: DetailViewModel by viewModel()
     private lateinit var binding: ActivityDetailBinding
 
     companion object {
@@ -23,19 +23,20 @@ class DetailActivity : AppCompatActivity() {
 
         val id = intent.getIntExtra(EXTRA_ID, 0)
 
-        detailViewModel = ViewModelProvider(this).get()
-        detailViewModel.onCreate(id)
+        with(detailViewModel) {
+            onCreate(id)
 
-        detailViewModel.title.observe(this) {
-            supportActionBar?.title = it
-        }
+            observe(title) {
+                supportActionBar?.title = it
+            }
 
-        detailViewModel.detailImage.observe(this) {
-            binding.detailImage.loadUrl(it)
-        }
+            observe(detailImage) {
+                binding.detailImage.loadUrl(it)
+            }
 
-        detailViewModel.detailVideoIndicator.observe(this) {
-            binding.detailVideoIndicator.visibility = if (it) View.VISIBLE else View.GONE
+            observe(detailVideoIndicator) {
+                binding.detailVideoIndicator.visibility = if (it) View.VISIBLE else View.GONE
+            }
         }
     }
 }
