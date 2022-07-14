@@ -20,12 +20,12 @@ class MyExamApplication : Application() {
         const val IO_DISPATCHER = "ioDispatcher"
     }
 
-    val appModule = module {
+    private val appModule = module {
         single { MediaItemsProvider }
         single(named(IO_DISPATCHER)) { Dispatchers.IO }
     }
 
-    val scopeModule = module {
+    private val scopeModule = module {
         scope<MainActivity> {
             viewModel { MainViewModel(get(), get(named(IO_DISPATCHER))) }
         }
