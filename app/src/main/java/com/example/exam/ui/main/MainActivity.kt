@@ -4,23 +4,24 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import com.example.exam.R
 import com.example.exam.data.Filter
 import com.example.exam.data.MediaItem
-import com.example.exam.data.MediaItemsProvider
 import com.example.exam.databinding.ActivityMainBinding
+import com.example.exam.observe
 import com.example.exam.startActivity
 import com.example.exam.ui.detail.DetailActivity
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import org.koin.androidx.scope.ScopeActivity
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ScopeActivity() {
 
-    private val adapter = MediaAdapter {
-        startActivity<DetailActivity>(DetailActivity.EXTRA_ID to it.id)
+    private val viewMainModel: MainViewModel by viewModel()
+
+    private val adapter by lazy {
+        MediaAdapter {
+            viewMainModel.onMediaItemClicked(it)
+        }
     }
 
     lateinit var binding: ActivityMainBinding
@@ -29,31 +30,27 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
         binding.recycler.adapter = adapter
-        updateItems()
 
-    }
+        with(viewMainModel) {
+            updateItems()
 
-    fun updateItems(filter: Filter = Filter.Non) {
-        lifecycleScope.launch(Dispatchers.Main) {
-            binding.progress.visibility = View.VISIBLE
-            adapter.items = withContext(Dispatchers.IO) {
-                getFilteredItems(filter)
+            observe(progressVisible) {
+                binding.progress.visibility = if (it) View.VISIBLE else View.GONE
             }
-            binding.progress.visibility = View.GONE
-        }
-    }
 
-    private fun getFilteredItems(filter: Filter): List<MediaItem> {
-        return MediaItemsProvider.getItems().let { mediaItems ->
-            when (filter) {
-                Filter.Non -> mediaItems
-                is Filter.ByType -> mediaItems.filter { it.mediaItemType == filter.value }
+            observe(mediaItems) {
+                adapter.items = it
+            }
+
+            observe(navigateToDetail) {
+                startActivity<DetailActivity>(DetailActivity.EXTRA_ID to it)
             }
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main, menu)
         return super.onCreateOptionsMenu(menu)
     }
@@ -64,7 +61,7 @@ class MainActivity : AppCompatActivity() {
             R.id.filter_videos -> Filter.ByType(MediaItem.MediaItemType.VIDEO)
             else -> Filter.Non
         }
-        updateItems(filter)
+        viewMainModel.updateItems(filter)
         return super.onOptionsItemSelected(item)
     }
 }
